@@ -1,0 +1,61 @@
+# =========================
+# Virtual Environments
+# =========================
+venv/
+env/
+ENV/
+.venv/
+env.bak/
+venv.bak/
+
+# =========================
+# Environment Variables (CRITICAL)
+# =========================
+.env
+.env.local
+.env.development
+.env.production
+*.pem
+
+# =========================
+# Byte-compiled / Optimized files
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# =========================
+# Logs and Databases
+# =========================
+*.log
+*.sqlite3
+*.db
+
+# =========================
+# IDEs and OS Files
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# =========================
+# Testing and Coverage
+# =========================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# =========================
+# Distribution / Packaging
+# =========================
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+*.egg-info/

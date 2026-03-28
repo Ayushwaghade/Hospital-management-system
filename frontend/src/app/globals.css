@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 190 60% 98%;
+    --foreground: 200 50% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 200 50% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 200 50% 10%;
+    --primary: 192 50% 60%; /* #64B5CD - Soft Teal */
+    --primary-foreground: 192 10% 98%;
+    --secondary: 187 60% 93%; /* #E0F7FA - Light grayish-blueish */
+    --secondary-foreground: 202 38% 44%; /* #457B9D - Muted Blue */
+    --muted: 187 30% 96%;
+    --muted-foreground: 202 20% 45%;
+    --accent: 202 38% 44%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 192 30% 90%;
+    --input: 192 30% 90%;
+    --ring: 192 50% 60%;
+    --radius: 0.75rem;
+    --chart-1: 192 50% 60%;
+    --chart-2: 202 38% 44%;
+    --chart-3: 173 58% 39%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --sidebar-background: 190 60% 99%;
+    --sidebar-foreground: 202 38% 30%;
+    --sidebar-primary: 192 50% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 187 60% 93%;
+    --sidebar-accent-foreground: 202 38% 44%;
+    --sidebar-border: 192 30% 90%;
+    --sidebar-ring: 192 50% 60%;
+  }
+  .dark {
+    --background: 200 50% 5%;
+    --foreground: 190 60% 98%;
+    --card: 200 50% 7%;
+    --card-foreground: 190 60% 98%;
+    --popover: 200 50% 7%;
+    --popover-foreground: 190 60% 98%;
+    --primary: 192 50% 60%;
+    --primary-foreground: 200 50% 5%;
+    --secondary: 202 38% 20%;
+    --secondary-foreground: 190 60% 98%;
+    --muted: 202 38% 15%;
+    --muted-foreground: 190 30% 70%;
+    --accent: 192 50% 60%;
+    --accent-foreground: 200 50% 5%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 190 60% 98%;
+    --border: 202 38% 20%;
+    --input: 202 38% 20%;
+    --ring: 192 50% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+}
