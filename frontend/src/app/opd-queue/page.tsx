@@ -19,6 +19,7 @@ interface Doctor {
   avgConsultationTime: number;
   patientsWaiting: number;
   estimatedWaitTime: number;
+  isAvailable: boolean;
 }
 
 interface Appointment {
@@ -111,16 +112,26 @@ export default function OpdQueuePage() {
               const currentPatient = docPatients.find(p => p.status === "In Consultation");
 
               return (
-                <Card key={doc.id} className="border-none shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col">
+                <Card key={doc.id} className={`border-none shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col ${
+                  !doc.isAvailable ? 'opacity-60' : ''
+                }`}>
                   <CardHeader className="bg-primary/5 pb-4">
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="text-lg">{doc.name}</CardTitle>
                         <p className="text-sm text-muted-foreground">{doc.department}</p>
                       </div>
-                      <Badge variant="outline" className="bg-background">
-                        {doc.avgConsultationTime}m / patient
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className={doc.isAvailable 
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                          : 'bg-gray-50 text-gray-500 border-gray-200'
+                        }>
+                          {doc.isAvailable ? "On Duty" : "Off Duty"}
+                        </Badge>
+                        <Badge variant="outline" className="bg-background">
+                          {doc.avgConsultationTime}m / patient
+                        </Badge>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="p-6 space-y-4 flex-1 flex flex-col">

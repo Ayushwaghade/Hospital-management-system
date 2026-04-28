@@ -60,14 +60,14 @@ export default function WaitingRoomPage() {
           setTimeLeft(0); 
           setLastQueueLength(-1); // Special flag for "Ready"
         } else if (myDoc) {
-          // Get the live number of people currently waiting for THIS doctor
-          const waitingCount = myDoc.patientsWaiting || 1;
+          // Use the patient's personal queue position for accurate individual wait time
+          const myPosition = myAppt.position ?? 1;
           const avgTime = myDoc.avgConsultationTime || 15;
 
-          // If the live queue length changes (e.g., a patient ahead of them finishes), sync the timer!
-          if (lastQueueLength !== waitingCount) {
-            setTimeLeft(waitingCount * avgTime * 60); // Multiply queue by doctor's custom time
-            setLastQueueLength(waitingCount);
+          // If position changes (e.g., a patient ahead finishes), resync the timer
+          if (lastQueueLength !== myPosition) {
+            setTimeLeft(myPosition * avgTime * 60);
+            setLastQueueLength(myPosition);
           }
         }
       }
@@ -123,7 +123,8 @@ export default function WaitingRoomPage() {
       clearInterval(pollInterval);
       clearInterval(timer);
     };
-  }, [lastQueueLength]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

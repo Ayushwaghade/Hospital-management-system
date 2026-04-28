@@ -132,6 +132,23 @@ def serialize_doc(doc):
 
 
 # ==========================================
+# HELPER: Auto-expire past appointments
+# ==========================================
+def expire_past_appointments():
+    """Mark appointments whose date has passed as 'Expired' so they stop polluting live queues."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    result = appointments_col.update_many(
+        {
+            "date":   {"$lt": today},
+            "status": {"$in": ["Upcoming", "Ready"]}
+        },
+        {"$set": {"status": "Expired"}}
+    )
+    if result.modified_count > 0:
+        logger.info("Auto-expired %d past appointments.", result.modified_count)
+
+
+# ==========================================
 # 0. CUSTOM RBAC DECORATOR
 # ==========================================
 def role_required(allowed_roles):
@@ -195,11 +212,14 @@ def login():
 @app.route('/api/doctors', methods=['GET'])
 @jwt_required()
 def get_doctors_and_queues():
+    expire_past_appointments()
+    today    = datetime.now().strftime("%Y-%m-%d")
     doctors  = list(doctors_col.find())
     response = []
     for doc in doctors:
         waiting_count = appointments_col.count_documents({
             "doctorId": str(doc['_id']),
+            "date":     today,
             "status":   {"$in": ["Upcoming", "Ready"]}
         })
         doc_data = serialize_doc(doc)
@@ -250,10 +270,20 @@ def create_appointment():
     data            = request.json
     doctor_id       = data.get("doctorId")
 
+    # Validate doctor exists and is on duty
+    doctor = doctors_col.find_one({"_id": ObjectId(doctor_id)}) if doctor_id else None
+    if not doctor:
+        return jsonify({"msg": "Doctor not found."}), 404
+    if not doctor.get("isAvailable", False):
+        return jsonify({"msg": "This doctor is currently off duty. Please select an available doctor."}), 400
+
     token    = f"T-{random.randint(1000, 9999)}"
+    # Position is per-doctor, per-date (each day starts a fresh queue)
+    appointment_date = data.get("date")
     position = appointments_col.count_documents({
         "doctorId": doctor_id,
-        "status":   {"$in": ["Upcoming", "Ready", "In Consultation"]}
+        "date":     appointment_date,
+        "status":   {"$in": ["Upcoming", "Ready"]}
     })
 
     patient_phone = data.get("phone", "").strip()
@@ -294,20 +324,26 @@ def create_appointment():
 @app.route('/api/queue/waiting-room', methods=['GET'])
 @jwt_required()
 def get_waiting_room():
+    expire_past_appointments()
+    today           = datetime.now().strftime("%Y-%m-%d")
     current_user_id = get_jwt_identity()
     user            = users_col.find_one({"_id": ObjectId(current_user_id)})
     if not user:
         return jsonify({"msg": "User not found"}), 404
 
     if user.get("role") == "patient":
+        # Show today's + future appointments (exclude completed and expired)
         active_apts = list(appointments_col.find({
             "patientId": current_user_id,
-            "status":    {"$ne": "Completed"}
+            "status":    {"$nin": ["Completed", "Expired"]},
+            "date":      {"$gte": today}
         }).sort("position", 1))
     else:
-        active_apts = list(appointments_col.find(
-            {"status": {"$ne": "Completed"}}
-        ).sort("position", 1))
+        # Staff/Admin: only today's live queue
+        active_apts = list(appointments_col.find({
+            "status": {"$nin": ["Completed", "Expired"]},
+            "date":   today
+        }).sort("position", 1))
 
     return jsonify([serialize_doc(apt) for apt in active_apts]), 200
 
@@ -341,6 +377,24 @@ def update_appointment_status(appointment_id):
         {"_id": ObjectId(appointment_id)},
         {"$set": {"status": new_status}}
     )
+
+    # ── Recalculate queue positions for this doctor's remaining patients ──
+    if apt:
+        doctor_id = apt.get("doctorId")
+        apt_date  = apt.get("date")
+        if doctor_id and apt_date:
+            remaining = list(appointments_col.find({
+                "doctorId": doctor_id,
+                "date":     apt_date,
+                "status":   {"$in": ["Upcoming", "Ready"]}
+            }).sort("createdAt", 1))
+
+            for idx, remaining_apt in enumerate(remaining):
+                appointments_col.update_one(
+                    {"_id": remaining_apt["_id"]},
+                    {"$set": {"position": idx}}
+                )
+    # ──────────────────────────────────────────────────────────────────────
 
     # ── SMS: status change notification ───────────────────────────────────
     if apt and new_status in SMS_TEMPLATES:
@@ -515,7 +569,7 @@ Return ONLY a valid JSON object — no markdown, no explanation outside the JSON
   ]
 }}
 """
-            url     = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={GEMINI_API_KEY}"
+            url     = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
             headers = {"Content-Type": "application/json"}
             payload = {"contents": [{"parts": [{"text": prompt}]}]}
 

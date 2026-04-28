@@ -21,6 +21,7 @@ interface Doctor {
   avgConsultationTime: number;
   patientsWaiting: number;
   estimatedWaitTime: number;
+  isAvailable: boolean;
 }
 
 const TIME_SLOTS = [
@@ -261,8 +262,9 @@ export default function AppointmentBookingPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {doctors.map(doc => (
-                        <SelectItem key={doc.id} value={doc.id}>
+                        <SelectItem key={doc.id} value={doc.id} disabled={!doc.isAvailable}>
                           {doc.name} — {doc.department}
+                          {!doc.isAvailable && " (Off Duty)"}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -331,16 +333,28 @@ export default function AppointmentBookingPage() {
               </div>
 
               {/* Dynamic Wait Time Hint */}
-              <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-lg border border-primary/10 transition-all">
-                <Clock className="w-5 h-5 text-primary shrink-0" />
+              <div className={`flex items-center gap-3 p-4 rounded-lg border transition-all ${
+                selectedDoctor && !selectedDoctor.isAvailable
+                  ? 'bg-destructive/5 border-destructive/20'
+                  : 'bg-primary/5 border-primary/10'
+              }`}>
+                <Clock className={`w-5 h-5 shrink-0 ${
+                  selectedDoctor && !selectedDoctor.isAvailable ? 'text-destructive' : 'text-primary'
+                }`} />
                 <p className="text-sm text-muted-foreground">
                   {selectedDoctor ? (
-                    <>
-                      There are currently{" "}
-                      <strong className="text-foreground">{selectedDoctor.patientsWaiting}</strong>{" "}
-                      patients in {selectedDoctor.name}'s queue. Estimated wait time is{" "}
-                      <strong className="text-foreground">{selectedDoctor.estimatedWaitTime} mins</strong>.
-                    </>
+                    selectedDoctor.isAvailable ? (
+                      <>
+                        There are currently{" "}
+                        <strong className="text-foreground">{selectedDoctor.patientsWaiting}</strong>{" "}
+                        patients in {selectedDoctor.name}'s queue. Estimated wait time is{" "}
+                        <strong className="text-foreground">{selectedDoctor.estimatedWaitTime} mins</strong>.
+                      </>
+                    ) : (
+                      <span className="text-destructive font-medium">
+                        {selectedDoctor.name} is currently off duty. Please select an available doctor.
+                      </span>
+                    )
                   ) : (
                     "Select a doctor to view real-time queue estimates."
                   )}
